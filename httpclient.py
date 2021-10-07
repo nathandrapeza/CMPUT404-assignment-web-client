@@ -71,7 +71,7 @@ class HTTPClient(object):
     def close(self):
         self.socket.close()
 
-    def remove_port_from_ip(self, host):
+    def remove_port_from_uri(self, host):
         new_hostname = ""
         if ":" in host:
             i = 0
@@ -97,28 +97,47 @@ class HTTPClient(object):
                 done = not part
         return buffer.decode('utf-8')
 
-    def GET(self, url, args=None):
+    # method uri_information will extract host, port, full_path, and mimetype from a uri
+    # into a list
+    def uri_information(self, url):
         parsed_url = urllib.parse.urlparse(url)
 
-        host = self.remove_port_from_ip(parsed_url[1])
+        host = self.remove_port_from_uri(parsed_url[1])
         
         if parsed_url.port == None:
             port = 80 # default for http
         else:
             port = parsed_url.port
         # fullpath will include the path (parsed_url[2]), along with all extra information (queries, fragments, etc.)
-        full_path = ""
-        for i in range(2,6):
+        full_path = parsed_url[2]
+        for i in range(3,6):
+            if parsed_url[4] != "": # Query
+                full_path += "?"
+            elif parsed_url[5] != "":
+                full_path += "#" # Fragment
             full_path += parsed_url[i]
+
+        if full_path == "":
+            full_path = "/"
 
         mimetype = ""
         if full_path == "/":
             mimetype = "text/html"
         else:
             mimetype = mimetypes.guess_type(host+full_path)
+        
+        return [parsed_url, host, port, full_path, mimetype]
+    
+    def GET(self, url, args=None):
+        uri_information = self.uri_information(url)
+
+        parsed_url = uri_information[0]
+        host = uri_information[1]
+        port = uri_information[2]
+        full_path = uri_information[3]
+        mimetype = uri_information[4]
    
-        # Assembling request start:
-        # Start line
+        # Assembling request:
         request = f"GET {full_path} HTTP/1.1\r\n"
         request += f"Host: {host}\r\n"
         request += f"Accept: */*\r\n"
@@ -126,35 +145,16 @@ class HTTPClient(object):
         request += f"Connection: close\r\n"
         request += "\r\n"
 
-        #remote_ip = self.get_remote_ip()
-        #print(f"full path: {full_path}")
-        print(f"request: {request}")
-        #print(f"url {url}")
+        # Connect to socket, send data, recieve all data, and shutdown + close socket
         self.connect(host, port)
         self.sendall(request)
-
-        #print(f"RECIEVED DATA : {self.recvall(self.socket)}")
         data = self.recvall(self.socket)
         self.socket.shutdown(socket.SHUT_WR)
         self.socket.close()
-        print(f"---DATA START---\n{data}\n---DATA END---\n")
-        split = data.split("\r\n")
-        #print(f"data split: =======START======={split}====END====")
-        #print(f"index of NL CR: {split.index('')}")
         response_code = self.get_code(data)
         response_body = self.get_body(data)
-        print("!!!~~~!~!~!~!~!!!~!~!~!!!~!~!~!~!~!~~~~~~~~~~~~~~~~~~~~~~")
         return HTTPResponse(response_code, response_body)
-        
-        # Accept any data given to us from a GET
-        
-        # Assembling request end.
 
-        # random defaults/original code:
-        # code = 500
-        # body = ""
-        # return HTTPResponse(code, body)
-        pass
 
     def POST(self, url, args=None):
         code = 500
