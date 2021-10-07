@@ -58,6 +58,31 @@ class HTTPClient(object):
     def close(self):
         self.socket.close()
 
+    # get_remote_ip code from client.py
+    # CMPUT 404 Lab 2 - TCP Proxy
+    # By Alexander Wong
+    # https://uofa-cmput404.github.io/author/alexander-wong.html
+    def get_remote_ip(self, host):
+        try:
+            remote_ip = socket.gethostbyname(host)
+        except socket.gaierror:
+            return None
+        return remote_ip
+
+    def remove_port_from_ip(self, host):
+        new_hostname = ""
+        if ":" in host:
+            i = 0
+            while i < len(host):
+                if host[i] == ":":
+                    i = len(host)
+                else:
+                    new_hostname += host[i]
+                    i += 1
+        else:
+            new_hostname = host
+        return new_hostname
+
     # read everything from the socket
     def recvall(self, sock):
         buffer = bytearray()
@@ -71,9 +96,56 @@ class HTTPClient(object):
         return buffer.decode('utf-8')
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
-        return HTTPResponse(code, body)
+        parsed_url = urllib.parse.urlparse(url)
+
+        host = self.remove_port_from_ip(parsed_url[1])
+        
+        if parsed_url.port == None:
+            port = 80 # default for http
+        else:
+            port = parsed_url.port
+        # fullpath will include the path (parsed_url[2]), along with all extra information (queries, fragments, etc.)
+        full_path = ""
+        for i in range(2,6):
+            full_path += parsed_url[i]
+
+        mimetype = ""
+        if full_path == "/":
+            mimetype = "text/html"
+        else:
+            mimetype = mimetypes.guess_type(host+full_path)
+   
+        # Assembling request start:
+        # Start line
+        request = f"GET {full_path} HTTP/1.1\r\n"
+        request += f"Host: {host}\r\n"
+        request += f"Accept: */*\r\n"
+        #request += f"Accept: {mimetype}\r\n"
+        request += f"Connection: close\r\n"
+        request += "\r\n"
+
+        #remote_ip = self.get_remote_ip()
+        print(f"full path: {full_path}")
+        print(f"request: {request}")
+        print(f"url {url}")
+        self.connect(host, port)
+        self.sendall(request)
+
+        #print(f"RECIEVED DATA : {self.recvall(self.socket)}")
+        data = self.recvall(self.socket)
+        self.socket.shutdown(socket.SHUT_WR)
+        self.socket.close()
+        print(f"---DATA START---\n{data}\n---DATA END---\n")
+
+        # Accept any data given to us from a GET
+        
+        # Assembling request end.
+
+        # random defaults/original code:
+        # code = 500
+        # body = ""
+        # return HTTPResponse(code, body)
+        pass
 
     def POST(self, url, args=None):
         code = 500
