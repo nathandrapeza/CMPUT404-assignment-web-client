@@ -137,7 +137,7 @@ class HTTPClient(object):
         full_path = uri_information[3]
         mimetype = uri_information[4]
    
-        # Assembling request:
+        # Assembling GET request:
         request = f"GET {full_path} HTTP/1.1\r\n"
         request += f"Host: {host}\r\n"
         request += f"Accept: */*\r\n"
@@ -157,9 +157,52 @@ class HTTPClient(object):
 
 
     def POST(self, url, args=None):
-        code = 500
-        body = ""
-        return HTTPResponse(code, body)
+        uri_information = self.uri_information(url)
+
+        parsed_url = uri_information[0]
+        host = uri_information[1]
+        port = uri_information[2]
+        full_path = uri_information[3]
+        mimetype = uri_information[4]
+        content_length = sys.getsizeof(args)
+
+        # Assembling POST request:
+        request = f"POST {full_path} HTTP/1.1\r\n"
+        request += f"Host: {host}\r\n"
+        request += "Content-Type: application/x-www-form-urlencoded\r\n"
+        request += f"Content-Length: {content_length}\r\n"
+        request += "Connection: closed\r\n"
+        request += "\r\n"
+        #request += args
+        if args != None:
+            if isinstance(args, dict):
+                req_string = ""
+                request += req_string
+                #i = 0
+                #for elem in sorted(args):
+                #    req_string += f"{elem}={args[elem]}&"
+                #req_string = req_string[:len(req_string)-1] # Remove extra &
+                #print(f"req string:::: {req_string}")
+            elif isinstance(args, str):
+                request += args
+        
+        #print(f"-----\n\nargs: {args}\n\n-----")
+        print(f"============\nrequest: {request}\n==========")
+        print("")
+        self.connect(host,port)
+        self.sendall(request)
+        data = self.recvall(self.socket)
+        self.socket.shutdown(socket.SHUT_WR)
+        self.socket.close()
+
+        response_code = self.get_code(data)
+        response_body = self.get_body(data)
+
+
+        #print(f"DATA: {data}")
+        #code = 500
+        #body = ""
+        return HTTPResponse(response_code, response_body)
 
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
