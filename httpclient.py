@@ -43,31 +43,33 @@ class HTTPClient(object):
         self.socket.connect((host, port))
         return None
 
+    # Code (according to freetests.py) will just be the integer http response code
     def get_code(self, data):
-        return None
+        split_data = data.split("\r\n")
+        split_status_line = split_data[0]
+        status_code = split_status_line.split(" ")[1]
+        return int(status_code)
 
     def get_headers(self,data):
-        return None
+
+        headers = ""
+        split_data = data.split("\r\n")
+        # Stop at newline carriage return
+        carriage_newline = split_data.index("")
+        for i in range(1, carriage_newline):
+            headers += split_data[i]
 
     def get_body(self, data):
-        return None
+        split_data = data.split("\r\n")
+        carriage_newline = split_data.index("")
+        body = split_data[carriage_newline + 1]
+        return body
     
     def sendall(self, data):
         self.socket.sendall(data.encode('utf-8'))
         
     def close(self):
         self.socket.close()
-
-    # get_remote_ip code from client.py
-    # CMPUT 404 Lab 2 - TCP Proxy
-    # By Alexander Wong
-    # https://uofa-cmput404.github.io/author/alexander-wong.html
-    def get_remote_ip(self, host):
-        try:
-            remote_ip = socket.gethostbyname(host)
-        except socket.gaierror:
-            return None
-        return remote_ip
 
     def remove_port_from_ip(self, host):
         new_hostname = ""
@@ -125,9 +127,9 @@ class HTTPClient(object):
         request += "\r\n"
 
         #remote_ip = self.get_remote_ip()
-        print(f"full path: {full_path}")
+        #print(f"full path: {full_path}")
         print(f"request: {request}")
-        print(f"url {url}")
+        #print(f"url {url}")
         self.connect(host, port)
         self.sendall(request)
 
@@ -136,7 +138,14 @@ class HTTPClient(object):
         self.socket.shutdown(socket.SHUT_WR)
         self.socket.close()
         print(f"---DATA START---\n{data}\n---DATA END---\n")
-
+        split = data.split("\r\n")
+        #print(f"data split: =======START======={split}====END====")
+        #print(f"index of NL CR: {split.index('')}")
+        response_code = self.get_code(data)
+        response_body = self.get_body(data)
+        print("!!!~~~!~!~!~!~!!!~!~!~!!!~!~!~!~!~!~~~~~~~~~~~~~~~~~~~~~~")
+        return HTTPResponse(response_code, response_body)
+        
         # Accept any data given to us from a GET
         
         # Assembling request end.
