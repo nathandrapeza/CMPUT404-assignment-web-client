@@ -71,6 +71,7 @@ class HTTPClient(object):
     def close(self):
         self.socket.close()
 
+    # removes :... from a URI
     def remove_port_from_uri(self, host):
         new_hostname = ""
         if ":" in host:
@@ -108,6 +109,7 @@ class HTTPClient(object):
             port = 80 # default for http
         else:
             port = parsed_url.port
+        
         # fullpath will include the path (parsed_url[2]), along with all extra information (queries, fragments, etc.)
         full_path = parsed_url[2]
         for i in range(3,6):
@@ -176,25 +178,23 @@ class HTTPClient(object):
         #request += args
         if args != None:
             if isinstance(args, dict):
+                #request += str(args)
                 req_string = ""
+                for elem in sorted(args):
+                    req_string += f"{elem}={args[elem]}&"
+                req_string = req_string[:len(req_string)-1] # Remove extra &
                 request += req_string
-                #i = 0
-                #for elem in sorted(args):
-                #    req_string += f"{elem}={args[elem]}&"
-                #req_string = req_string[:len(req_string)-1] # Remove extra &
-                #print(f"req string:::: {req_string}")
             elif isinstance(args, str):
                 request += args
         
         #print(f"-----\n\nargs: {args}\n\n-----")
-        print(f"============\nrequest: {request}\n==========")
-        print("")
+        #print(f"============request: {request}==========")
         self.connect(host,port)
         self.sendall(request)
         data = self.recvall(self.socket)
         self.socket.shutdown(socket.SHUT_WR)
         self.socket.close()
-
+        #print(f"dataaaaa=========== {data}")
         response_code = self.get_code(data)
         response_body = self.get_body(data)
 
