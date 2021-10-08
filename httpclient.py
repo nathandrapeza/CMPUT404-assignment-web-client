@@ -166,15 +166,14 @@ class HTTPClient(object):
         port = uri_information[2]
         full_path = uri_information[3]
         mimetype = uri_information[4]
-        content_length = sys.getsizeof(args)
+        #content_length = sys.getsizeof(args)
 
         # Assembling POST request:
         request = f"POST {full_path} HTTP/1.1\r\n"
         request += f"Host: {host}\r\n"
         request += "Content-Type: application/x-www-form-urlencoded\r\n"
-        request += f"Content-Length: {content_length}\r\n"
-        request += "Connection: closed\r\n"
-        request += "\r\n"
+
+
         #request += args
         if args != None:
             if isinstance(args, dict):
@@ -182,13 +181,26 @@ class HTTPClient(object):
                 req_string = ""
                 for elem in sorted(args):
                     req_string += f"{elem}={args[elem]}&"
-                req_string = req_string[:len(req_string)-1] # Remove extra &
-                request += req_string
+                req_body = req_string[:len(req_string)-1] # Remove extra &
+                content_length = len(req_string)
+                #request += req_string
             elif isinstance(args, str):
-                request += args
+                #request += args
+                content_length = len(args)
+                req_body = args
+            elif isinstance(args, int):
+                pass
+        else:
+            content_length = 0
+        
+        request += f"Content-Length: {content_length}\r\n"
+        request += "Connection: closed\r\n"
+        request += "\r\n"
+        if args != None:
+            request += req_string
         
         #print(f"-----\n\nargs: {args}\n\n-----")
-        #print(f"============request: {request}==========")
+        print(f"============request: {request}==========")
         self.connect(host,port)
         self.sendall(request)
         data = self.recvall(self.socket)
