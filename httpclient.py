@@ -87,6 +87,10 @@ class HTTPClient(object):
         return new_hostname
 
     # read everything from the socket
+    # source for try/except:
+    # https://stackoverflow.com/a/19706723 
+    # Answer author: SujitS - https://stackoverflow.com/users/2925295/sujits
+    # Answer editor: Peter Mortensen - https://stackoverflow.com/users/63550/peter-mortensen
     def recvall(self, sock):
         buffer = bytearray()
         done = False
@@ -96,8 +100,10 @@ class HTTPClient(object):
                 buffer.extend(part)
             else:
                 done = not part
-        return buffer.decode('utf-8')
-
+        try:
+            return buffer.decode('utf-8')
+        except:
+            return buffer.decode('ISO-8859-1')
     # method uri_information will extract host, port, full_path, and mimetype from a uri
     # into a list
     def uri_information(self, url):
@@ -143,7 +149,7 @@ class HTTPClient(object):
         request = f"GET {full_path} HTTP/1.1\r\n"
         request += f"Host: {host}\r\n"
         request += f"Accept: */*\r\n"
-        #request += f"Accept: {mimetype}\r\n"
+        request += "Accept-Encoding: gzip\r\n"
         request += f"Connection: close\r\n"
         request += "\r\n"
 
@@ -172,7 +178,6 @@ class HTTPClient(object):
         request = f"POST {full_path} HTTP/1.1\r\n"
         request += f"Host: {host}\r\n"
         request += "Content-Type: application/x-www-form-urlencoded\r\n"
-
 
         req_string = ""
         if args != None:
@@ -205,6 +210,10 @@ class HTTPClient(object):
 
         response_code = self.get_code(data)
         response_body = self.get_body(data)
+        
+        # "As a user when I GET or POST I want the result printed to stdout"
+        print(f"Result: {data}")
+        
         return HTTPResponse(response_code, response_body)
 
     def command(self, url, command="GET", args=None):
