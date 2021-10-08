@@ -9,7 +9,7 @@ Make a simple web-client like curl or wget
 
 Contributors / Licensing
 ========================
-Collaborated (discussed) with project group partner Warren Stix.
+Collaborated (discussed) with project group partner Warren Stix. No source code was shared.
 
 Generally everything is LICENSE'D under the Apache 2 license by Abram Hindle, 
 https://github.com/tywtyw2002, https://github.com/treedust, and https://github.com/nathandrapeza
