@@ -71,7 +71,7 @@ class HTTPClient(object):
     def close(self):
         self.socket.close()
 
-    # removes :... from a URI
+    # removes port from a URI
     def remove_port_from_uri(self, host):
         new_hostname = ""
         if ":" in host:
@@ -147,7 +147,7 @@ class HTTPClient(object):
         request += f"Connection: close\r\n"
         request += "\r\n"
 
-        # Connect to socket, send data, recieve all data, and shutdown + close socket
+        # Connect to socket, send GET, recieve all data, and shutdown + close socket
         self.connect(host, port)
         self.sendall(request)
         data = self.recvall(self.socket)
@@ -174,22 +174,19 @@ class HTTPClient(object):
         request += "Content-Type: application/x-www-form-urlencoded\r\n"
 
 
-        #request += args
+        req_string = ""
         if args != None:
             if isinstance(args, dict):
-                #request += str(args)
-                req_string = ""
                 for elem in sorted(args):
                     req_string += f"{elem}={args[elem]}&"
-                req_body = req_string[:len(req_string)-1] # Remove extra &
                 content_length = len(req_string)
                 #request += req_string
             elif isinstance(args, str):
                 #request += args
                 content_length = len(args)
-                req_body = args
-            elif isinstance(args, int):
-                pass
+                req_string = args
+            elif isinstance(args, int) or isinstance(args,float):
+                req_string = str(args)
         else:
             content_length = 0
         
@@ -199,21 +196,15 @@ class HTTPClient(object):
         if args != None:
             request += req_string
         
-        #print(f"-----\n\nargs: {args}\n\n-----")
-        print(f"============request: {request}==========")
+        # Connect to socket, send POST, recieve all data, and shutdown + close socket
         self.connect(host,port)
         self.sendall(request)
         data = self.recvall(self.socket)
         self.socket.shutdown(socket.SHUT_WR)
         self.socket.close()
-        #print(f"dataaaaa=========== {data}")
+
         response_code = self.get_code(data)
         response_body = self.get_body(data)
-
-
-        #print(f"DATA: {data}")
-        #code = 500
-        #body = ""
         return HTTPResponse(response_code, response_body)
 
     def command(self, url, command="GET", args=None):
