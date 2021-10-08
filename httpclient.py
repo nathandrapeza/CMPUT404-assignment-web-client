@@ -139,11 +139,11 @@ class HTTPClient(object):
     def GET(self, url, args=None):
         uri_information = self.uri_information(url)
 
-        parsed_url = uri_information[0]
+        parsed_url = uri_information[0] # unused
         host = uri_information[1]
         port = uri_information[2]
         full_path = uri_information[3]
-        mimetype = uri_information[4]
+        mimetype = uri_information[4] # unused
    
         # Assembling GET request:
         request = f"GET {full_path} HTTP/1.1\r\n"
@@ -161,17 +161,20 @@ class HTTPClient(object):
         self.socket.close()
         response_code = self.get_code(data)
         response_body = self.get_body(data)
+
+        # "As a user when I GET or POST I want the result printed to stdout"
+        print(f"Result of GET request:\n{data}")
         return HTTPResponse(response_code, response_body)
 
 
     def POST(self, url, args=None):
         uri_information = self.uri_information(url)
 
-        parsed_url = uri_information[0]
+        parsed_url = uri_information[0] # unused
         host = uri_information[1]
         port = uri_information[2]
         full_path = uri_information[3]
-        mimetype = uri_information[4]
+        mimetype = uri_information[4] # unused
         #content_length = sys.getsizeof(args)
 
         # Assembling POST request:
@@ -210,10 +213,9 @@ class HTTPClient(object):
 
         response_code = self.get_code(data)
         response_body = self.get_body(data)
-        
+
         # "As a user when I GET or POST I want the result printed to stdout"
-        print(f"Result: {data}")
-        
+        print(f"Result of POST request:\n{data}")
         return HTTPResponse(response_code, response_body)
 
     def command(self, url, command="GET", args=None):
